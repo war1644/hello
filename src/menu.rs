@@ -14,8 +14,8 @@ impl Menu
     fn stringify(arr:&[&str]) -> String {
         let mut menu_str = String::new();
         for v in arr.into_iter() {
-            menu_str.push_str(v);
             menu_str.push_str("\n");
+            menu_str.push_str(v);
         }
         menu_str
     }

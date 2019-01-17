@@ -5,14 +5,14 @@ pub struct Ship {
     pub describe: String,
     pub hp: i32,
     pub max_hp: i32,
-    pub cargo: i32,
+    pub cargo: u32,
     pub speed: i32,
     pub fuel: i32,
     pub max_fuel: i32,
 }
 
 impl Ship {
-    pub fn new(name: &str, hp: i32, cargo: i32, speed: i32, price: i32, fuel: i32) -> Ship {
+    pub fn new(name: &str, hp: i32, cargo: u32, speed: i32, price: i32, fuel: i32) -> Ship {
         Ship {
             name: name.to_string(),
             hp,

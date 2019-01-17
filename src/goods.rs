@@ -1,10 +1,10 @@
 #[derive(Debug, Clone)]
 pub struct Goods {
-    name: String,
+    pub name: String,
     pub price: u32,
     standard_price: u32,
-    describe: String,
-    pub quantity: i16,
+    pub describe: String,
+    pub quantity: u32,
 }
 
 impl Goods {

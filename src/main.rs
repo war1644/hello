@@ -12,6 +12,7 @@ use crate::game::Game;
 
 
 fn main() {
+
      Game::new(600,400).start();
 }
 

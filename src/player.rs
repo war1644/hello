@@ -7,19 +7,22 @@ use crate::goods::Goods;
 #[derive(Debug)]
 pub struct Player {
     name: String,
-    pub money: i32,
+    pub money: i64,
     pub ship: Ship,
     pub planet_index: usize,
     galaxy: String,
-    pub goods_count:i32,
-    goods_list:HashMap<String,Goods>,
+    pub goods_count:u32,
+    //飞船货仓
+    cargo:HashMap<String,Goods>,
+    //由于玩家输入的都是索引
+    cargo_name_list:Vec<String>,
     year:i32,
     day:i32,
     kill:i32,
 }
 
 impl Player {
-    pub fn new(user_name: &str, money: i32, ship: Ship, planet_index: usize) -> Player {
+    pub fn new(user_name: &str, money: i64, ship: Ship, planet_index: usize) -> Player {
         Player {
             name: user_name.to_string(),
             money,
@@ -30,7 +33,8 @@ impl Player {
             year:0,
             day:0,
             kill:0,
-            goods_list:HashMap::new(),
+            cargo:HashMap::new(),
+            cargo_name_list:vec![]
         }
     }
 
@@ -72,61 +76,85 @@ impl Player {
         // }
     }
 
-    pub fn sell_goods(index:usize) -> String
+    pub fn sell_goods(&mut self,index:usize) -> String
     {
-        string tmpName = goodNameList[index];
-        if(!cargo.ContainsKey(tmpName))
-        {
-        return String::from("没有这个货物");
+        //检查越界
+        if index >= self.cargo_name_list.len() {
+            return String::from("没有这个货物");
         }
-        Good good = cargo[tmpName];
-        int totalPrice = good.price * good.quantity;
-        goodsCount -= good.quantity;
-        RemoveCargoGood(tmpName);
-        AddCredits(totalPrice);
-        String::from("{name} 已卖")
+        let key_name = self.cargo_name_list[index].clone();
+        let goods = self.cargo.get(&key_name);
+        if let Some(v) = goods {
+            let total_price = v.price * v.quantity;
+            self.goods_count -= v.quantity;
+            self.add_money(total_price as i64);
+            self.cargo.remove(&key_name);
+            self.cargo_name_list.remove(index);
+        }
+        format!("{} 已卖",key_name)
     }
 
-    pub fn buy_goods(&mut self,goods:Goods, quantity:usize) -> String
+    pub fn buy_goods(&mut self,goods:Goods) -> String
     {
-        let total_price = goods.price * quantity as u32;
+        let total_price = goods.price * goods.quantity;
+        //飞船仓库剩余空间
         let surplus = self.ship.cargo - self.goods_count;
-        if credits >= total_price && goods.quantity <= surplus
-        {
-            goodsCount += quantity;
-            good.quantity = quantity;
-            self.add_cargo_goods(goods);
-            self.add_credits(-total_price);
-            return String::from("购买成功")
+        if self.money >= total_price as i64 {
+            return  String::from("余额不足")
         }
-        if credits < total_price {
-            return String::from("钱不够");
+        if surplus >= goods.quantity {
+            return  String::from("货仓空间不足")
         }
-        String::from("货仓空间不够")
+        self.goods_count += goods.quantity;
+        if !self.cargo.contains_key(&goods.name) {
+            self.cargo_name_list.push(goods.name.clone());
+        }
+        self.add_cargo_goods(goods);
+        self.add_money(-(total_price as i64));
+        String::from("购买成功")
     }
 
-    pub fn add_goods(&mut self, goods:Goods, quantity:u32) -> String
+    //外部调用 非购买
+    pub fn add_goods(&mut self, mut goods:Goods) -> String
     {
         let surplus = self.ship.cargo - self.goods_count;
-        if good.quantity <= surplus
+        if surplus >= goods.quantity
         {
-            self.goods_count = self.goods_count + quantity as i32;
-            goods.quantity = quantity;
+            self.goods_count += goods.quantity;
+            if !self.cargo.contains_key(&goods.name) {
+                self.cargo_name_list.push(goods.name.clone());
+            }
             self.add_cargo_goods(goods);
             return String::from("已存入货仓");
         }
         String::from("货仓空间不够")
     }
 
-    public List<string> CargoInventory ()
+    pub fn add_money(&mut self,money:i64)
     {
-    var inventory = new List<string>();
-
-    foreach (var item in cargo)
-    {
-    inventory.Add($"物品名：{item.Value.name}，库存：{item.Value.quantity}");
+        self.money += money;
     }
-    return inventory;
+
+
+    fn add_cargo_goods(&mut self,goods:Goods)
+    {
+        self.cargo.entry(goods.name.clone())
+            .and_modify(|e| { e.quantity += goods.quantity })
+            .or_insert(goods);
+    }
+
+    fn remove_cargo_goods(&mut self, key_name:&str)
+    {
+        self.cargo.remove(key_name);
+    }
+
+    pub fn cargo_inventory(&self) -> String
+    {
+        let mut inventory = String::new();
+        for v in self.cargo.iter() {
+            inventory.push_str(&format!("物品名：{}，库存：{}\n",v.1.name,v.1.quantity));
+        }
+        inventory
     }
 }
 

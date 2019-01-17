@@ -43,8 +43,10 @@ impl Game {
     pub fn start(&mut self) {
         self.create_galaxy();
         let ship = self.ships[1].clone();
-        let player = Player::new("路漫漫", 9999, ship, 0);
-        player.buy_goods(self.goods[1],5);
+        let mut player = Player::new("路漫漫", 9999, ship, 0);
+        let mut goods = self.goods[1].clone();
+        goods.quantity = 5;
+        player.buy_goods(goods);
         self.process_logic(player);
     }
 
@@ -74,7 +76,7 @@ impl Game {
         }
     }
 
-    fn process_logic(&self,player:Player) {
+    fn process_logic(&self,mut player:Player) {
         let mut choice = 0;
         loop {
             if self.docked {
@@ -85,7 +87,11 @@ impl Game {
             let user_input = &Self::get_input()[..];
             match user_input {
                 "help" => {
-                    println!("{}",Menu::help());
+                    if self.docked {
+                        println!("{}",Menu::docked());
+                    }else{
+                        println!("{}",Menu::help());
+                    }
                 }
                 "state" => {
                     let mut current_planet= self.galaxy.get_planet(player.planet_index);
@@ -100,11 +106,11 @@ impl Game {
                     choice = Self::get_choice();
                     println!("{}",choice);
 
-                    let goods = &planet_goods[choice];
-                    println!("> 买多少的{}？", good.name);
+                    let mut goods = planet_goods[choice].clone();
+                    println!("> 买多少的{}？", goods.name);
                     choice = Self::get_choice();
-
-                    let info = player.buy_goods(goods, number);
+                    goods.quantity = choice as u32;
+                    let info = player.buy_goods(goods);
                     println!("{}",info);
                 }
 
