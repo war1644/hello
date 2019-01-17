@@ -1,0 +1,10 @@
+[package]
+name = "void_fleet"
+version = "0.1.0"
+authors = ["dxq <dxq1994@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.6.1"
+iui = "0.3.0"
+prettytable-rs = "0.8.0"
