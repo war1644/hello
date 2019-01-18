@@ -1,6 +1,16 @@
+use crate::goods::Goods;
 pub struct Menu;
 impl Menu
 {
+
+    fn stringify(arr:&[&str]) -> String {
+        let mut menu_str = String::new();
+        for v in arr.into_iter() {
+            menu_str.push_str("\n");
+            menu_str.push_str(v);
+        }
+        menu_str
+    }
     pub fn start() -> String {
         let arr = [
             "--void fleet--",
@@ -11,19 +21,23 @@ impl Menu
         Self::stringify(&arr)
     }
 
-    fn stringify(arr:&[&str]) -> String {
+    pub fn show(list:&Vec<Goods>){
         let mut menu_str = String::new();
-        for v in arr.into_iter() {
+        for (i,v) in list.into_iter().enumerate() {
             menu_str.push_str("\n");
-            menu_str.push_str(v);
+            menu_str.push_str(&i.to_string());
+            menu_str.push_str(" ");
+            menu_str.push_str(&v.name.clone());
+            menu_str.push_str(" ");
+            menu_str.push_str(&v.price.to_string());
         }
-        menu_str
+        println!("-- 商品列表-- {}",menu_str);
     }
 
     pub fn help() -> String {
         let arr = ["--巡航状态帮助菜单--",
             "map - 显示地图信息",
-            "goto - 选择前往星球",
+            "goto - 选择前往地点",
             "jump - 仅在星系跳跃大门可用，进入其他星系",
             "dock - 停靠附近星球空间站",
             "cargo - 货仓物品列表",

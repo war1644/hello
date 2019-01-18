@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::planet::Planet;
 use crate::ship::Ship;
 use crate::goods::Goods;
+use crate::game::Game;
 
 #[derive(Debug)]
 pub struct Player {
@@ -10,28 +11,30 @@ pub struct Player {
     pub money: i64,
     pub ship: Ship,
     pub planet_index: usize,
-    galaxy: String,
+    pub galaxy_name: String,
+    pub planet_name: String,
     pub goods_count:u32,
     //飞船货仓
     cargo:HashMap<String,Goods>,
     //由于玩家输入的都是索引
     cargo_name_list:Vec<String>,
-    year:i32,
-    day:i32,
+    pub year:f32,
+    pub day:f32,
     kill:i32,
 }
 
 impl Player {
-    pub fn new(user_name: &str, money: i64, ship: Ship, planet_index: usize) -> Player {
+    pub fn new(user_name: &str, money: i64, ship: Ship, planet_index: usize,planet_name:&str) -> Player {
         Player {
             name: user_name.to_string(),
             money,
             ship,
             planet_index,
-            galaxy: String::from("天狼星区"),
+            galaxy_name: String::from("天狼星区"),
+            planet_name:String::from(planet_name),
             goods_count: 0,
-            year:0,
-            day:0,
+            year:0.0,
+            day:0.0,
             kill:0,
             cargo:HashMap::new(),
             cargo_name_list:vec![]
@@ -45,40 +48,15 @@ impl Player {
         if docked {
             string = "停靠中";
         }
-        format!("--状态--\nMoney：{}，旅行时间： {} 年 {} 天\n位置：{} -- {}，旗舰：{}\n燃料： {}，飞行状态：{}\n装甲：{}，杀敌：{}\n空余货仓：{}", self.money, self.year, self.day,self.galaxy,planet.name,self.ship.name,self.ship.fuel,string,self.ship.hp,self.kill,count)
-//        state
+        format!("--状态--\nMoney：{}，旅行时间： {} 年 {} 天\n位置：{} -- {}，旗舰：{}\n燃料： {}，飞行状态：{}\n装甲：{}，杀敌：{}\n空余货仓：{}", self.money, self.year, self.day,self.galaxy_name,planet.name,self.ship.name,self.ship.fuel,string,self.ship.hp,self.kill,count)
     }
 
-    pub fn set_goto_plant(&mut self, to_planet_index: usize) {
-        self.set_plant(to_planet_index);
 
-        // int distance = CalculatePlanetsDistance(toPlanet);
-        // if(ship.CalculateFuel(distance))
-        // {
-        // day += (distance/ship.speed) <= 0 ? 1 : (distance/ship.speed);
-        // CalculateYears();
-        // return true;
-        // }
-        // return false;
-    }
 
-    pub fn set_plant(&mut self, to_planet_index: usize) {
-        self.planet_index = to_planet_index;
-        // if(planet.name == "星系跳跃门")
-        // {
-        //     Game.docked = false;
-        //     Game.isJump = true;
-        // }
-        // else
-        // {
-        //     Game.docked = false;
-        //     Game.isJump = false;
-        // }
-    }
 
     pub fn sell_goods(&mut self,index:usize) -> String
     {
-        //检查越界
+        //out of range check
         if index >= self.cargo_name_list.len() {
             return String::from("没有这个货物");
         }
@@ -99,11 +77,11 @@ impl Player {
         let total_price = goods.price * goods.quantity;
         //飞船仓库剩余空间
         let surplus = self.ship.cargo - self.goods_count;
-        if self.money >= total_price as i64 {
-            return  String::from("余额不足")
+        if self.money < total_price as i64 {
+            return String::from("余额不足");
         }
-        if surplus >= goods.quantity {
-            return  String::from("货仓空间不足")
+        if surplus < goods.quantity {
+            return String::from("货仓空间不足");
         }
         self.goods_count += goods.quantity;
         if !self.cargo.contains_key(&goods.name) {
@@ -152,7 +130,7 @@ impl Player {
     {
         let mut inventory = String::new();
         for v in self.cargo.iter() {
-            inventory.push_str(&format!("物品名：{}，库存：{}\n",v.1.name,v.1.quantity));
+            inventory.push_str(&format!("\n物品名：{}，库存：{}",v.0,v.1.quantity));
         }
         inventory
     }

@@ -13,7 +13,7 @@ use crate::ship::Ship;
 use crate::menu::Menu;
 //use crate::display::Display;
 
-static WAIT_TIME: u32 = 100;
+static WAIT_TIME: u64 = 100;
 
 pub struct Game {
     w: i32,
@@ -21,8 +21,10 @@ pub struct Game {
     goods: [Goods; 9],
     ships: [Ship; 7],
     galaxy: Galaxy,
-//    player: Option<Player>,
-    docked: bool,
+    player: Vec<Player>,
+    planet_name :String,
+//    planet_index:usize,
+    pub docked: bool,
     user_input: String
 }
 
@@ -34,20 +36,26 @@ impl Game {
             goods: Self::create_goods(),
             ships: Self::create_ship(),
             galaxy: Galaxy::new(),
-//            player: None,
+            player: vec![],
             docked:true,
-            user_input:String::from("")
+//            planet_index:1,
+            user_input:String::from(""),
+            planet_name:String::from("")
         }
     }
 
     pub fn start(&mut self) {
         self.create_galaxy();
         let ship = self.ships[1].clone();
-        let mut player = Player::new("路漫漫", 9999, ship, 0);
-        let mut goods = self.goods[1].clone();
+        let planet_index = 1;
+        let planet = self.galaxy.get_planet(planet_index);
+        self.planet_name = planet.name.clone();
+        let mut player = Player::new("路漫漫", 10000, ship, planet_index,&planet.name);
+        self.player.push(player);
+        let mut goods = self.goods[3].clone();
         goods.quantity = 5;
-        player.buy_goods(goods);
-        self.process_logic(player);
+        self.player[0].buy_goods(goods);
+        self.process_logic();
     }
 
     fn get_input() -> String
@@ -69,14 +77,14 @@ impl Game {
                 Ok(number) => {return number},
                 Err(_) => {
                     println!("无效输入");
-                    thread::sleep(Duration::from_millis(100));
+                    Self::wait();
                     continue
                 }
             }
         }
     }
 
-    fn process_logic(&self,mut player:Player) {
+    fn process_logic(&mut self) {
         let mut choice = 0;
         loop {
             if self.docked {
@@ -93,29 +101,45 @@ impl Game {
                         println!("{}",Menu::help());
                     }
                 }
+                "cargo" => {
+                    println!("-- 货舱 -- {}",self.player[0].cargo_inventory());
+                }
+                "map" => {
+                    println!("-- map --{}",self.galaxy.map());
+                }
+                "goto" => {
+                    let planets_list = self.galaxy.get_planet_list(&self.galaxy.current);
+                    println!("-- {} map --{}\n选择前往地点：",&self.galaxy.current,planets_list);
+                    choice = Self::get_choice();
+                    //todo: out of range check
+                    self.goto_planet(choice);
+                }
                 "state" => {
-                    let mut current_planet= self.galaxy.get_planet(player.planet_index);
-                    let state = player.get_state((self.docked,current_planet));
+                    let mut current_planet= self.galaxy.get_planet(self.player[0].planet_index);
+                    let state = self.player[0].get_state((self.docked,current_planet));
                     println!("{}",&state[..]);
                 }
-
                 "buy" if self.docked => {
-                    let mut current_planet= self.galaxy.get_planet(player.planet_index);
+                    if self.player[0].planet_index == 0 {
+                        println!("当前位置没有商品!");
+                        continue
+                    }
+                    let mut current_planet= self.galaxy.get_planet(self.player[0].planet_index);
                     let planet_goods = &current_planet.goods;
-                    println!("{:#?}",planet_goods);
+                    Menu::show(planet_goods);
+                    println!("> 选择购买的物品");
                     choice = Self::get_choice();
-                    println!("{}",choice);
-
+//
                     let mut goods = planet_goods[choice].clone();
-                    println!("> 买多少的{}？", goods.name);
+                    println!("> 需要多少的{}？", goods.name);
                     choice = Self::get_choice();
                     goods.quantity = choice as u32;
-                    let info = player.buy_goods(goods);
+                    let info = self.player[0].buy_goods(goods);
                     println!("{}",info);
                 }
 
                 _ => {
-                    thread::sleep(Duration::from_millis(100));
+                    Self::wait();
                     continue
                 }
             }
@@ -259,12 +283,12 @@ impl Game {
     fn create_goods() -> [Goods; 9] {
         [
             Goods::new("营养液", 200),
-            Goods::new("金", 12000),
-            Goods::new("钻石", 1400),
+            Goods::new("金", 1200),
+            Goods::new("能量护盾", 1500),
             Goods::new("矿石", 30),
-            Goods::new("武器", 60),
-            Goods::new("木材", 10),
-            Goods::new("铜", 50),
+            Goods::new("武器", 100),
+            Goods::new("建材", 10),
+            Goods::new("导弹", 300),
             Goods::new("暗物质", 450000),
             Goods::new("生活包", 500),
         ]
@@ -272,13 +296,13 @@ impl Game {
 
     fn create_ship() -> [Ship; 7] {
         [
-            Ship::new("采矿船", 1000, 150, 3, 100000, 25),
-            Ship::new("轻型货机", 500, 50, 3, 25000, 20),
-            Ship::new("PLA战斗机", 300, 300, 4, 75000, 20),
-            Ship::new("CR90护卫舰", 3000, 750, 7, 125000, 30),
-            Ship::new("PLA驱逐舰", 50000, 500, 9, 400000, 40),
-            Ship::new("帝国驱逐舰", 50000, 1000, 7, 500000, 50),
-            Ship::new("帝国歼星舰", 100000, 2000, 5, 1000000, 100),
+            Ship::new("采矿船", 1000, 200, 100, 100000, 2500),
+            Ship::new("轻型货机", 500, 50, 300, 25000, 2000),
+            Ship::new("PLA战斗机", 300, 100, 500, 75000, 2000),
+            Ship::new("CR90护卫舰", 3000, 750, 300, 125000, 3000),
+            Ship::new("PLA驱逐舰", 50000, 500, 200, 400000, 4000),
+            Ship::new("帝国驱逐舰", 50000, 1000, 100, 500000, 5000),
+            Ship::new("帝国歼星舰", 100000, 2000, 50, 1000000, 10000),
         ]
     }
 
@@ -301,7 +325,7 @@ impl Game {
                 let y = rand::thread_rng().gen_range(-max_distance, max_distance);
                 let x_distance = x - planets[0].x;
                 let y_distance = y - planets[0].y;
-                let distance = x_distance + y_distance;
+                let distance = (x_distance + y_distance).abs();
                 let plant_name = format!("开发行星{}", planet_number);
                 let mut planet = Planet::new(&plant_name, x, y, galaxy_name);
                 //设置市场价
@@ -316,12 +340,12 @@ impl Game {
         // self.galaxy.current = String::from("天狼星区");
     }
 
-    //各星球价格随机，形成差价
+    //各星球商品价格随机，形成差价
     fn set_random_goods_price(&self) -> Vec<Goods> {
         let mut tmp_goods = Vec::new();
         for v in self.goods.iter() {
             let mut value = v.clone();
-            value.price = rand::thread_rng().gen_range(value.price >> 1, value.price);
+            value.price = rand::thread_rng().gen_range(value.price >> 1, value.price<<1);
             tmp_goods.push(value);
         }
         tmp_goods
@@ -338,5 +362,52 @@ impl Game {
         tmp_ships
     }
 
+    pub fn goto_planet(&mut self, to_planet_index:usize) {
+        let distance = self.calculate_planets_distance(to_planet_index);
+        if self.player[0].ship.calculate_fuel(distance) {
+            Self::auto_show("已锁定目标位置，开始巡航...");
+            self.player[0].day += distance as f32/self.player[0].ship.speed as f32;
+            self.calculate_years();
+            self.player[0].planet_index = to_planet_index;
+            if to_planet_index == 0 {
+                Self::auto_show("进入星系跳跃门...");
+                Self::auto_show("开始跃迁...");
+                self.galaxy.jump();
+                println!("跃迁完成，欢迎来到 {} ", &self.galaxy.current);
+            }else {
+                let to_planet = self.galaxy.get_planet(to_planet_index);
+                println!("已到达 {} ", to_planet.name);
+            }
+        }else {
+            println!("燃料不够！");
+        }
+
+    }
+
+    pub fn calculate_planets_distance(&self,to_planet_index: usize) -> i32
+    {
+        let current_planet = self.galaxy.get_planet(self.player[0].planet_index);
+        let to_planet = self.galaxy.get_planet(to_planet_index);
+        let distance = current_planet.distance - to_planet.distance;
+        distance.abs()
+    }
+
+    pub fn calculate_years(&mut self)
+    {
+        if self.player[0].day > 365.0 {
+            self.player[0].day -= 365.0;
+            self.player[0].year += 1.0;
+        }
+    }
+
+    pub fn auto_show (text:&str) {
+        println!("{}",text);
+        thread::sleep(Duration::from_millis(2000));
+    }
+
     fn save() {}
+
+    fn wait() {
+        thread::sleep(Duration::from_millis(WAIT_TIME));
+    }
 }

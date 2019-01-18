@@ -31,14 +31,14 @@ impl Galaxy {
         panic!("index error {}",index);
     }
 
-    pub fn get_planet_list(&self, index_key: &str) -> Vec<String> {
+    pub fn get_planet_list(&self, index_key: &str) -> String {
         let planets = self.list.get(index_key);
-        let mut inventory = Vec::new();
+        let mut inventory = String::new();
         if let Some(v) = planets {
-            for planet in v {
-                inventory.push(format!(
-                    "星球名：{}，位置：[{}, {}]",
-                    planet.name, planet.x, planet.x
+            for (i,planet) in v.into_iter().enumerate() {
+                inventory.push_str(&format!(
+                    "\n{} 星球名：{}，位置：[{}, {}]， 距离：{}",i,
+                    planet.name, planet.x, planet.x,planet.distance
                 ));
             }
         }
@@ -46,11 +46,10 @@ impl Galaxy {
     }
 
 
-
-    pub fn map(&self) -> Vec<String> {
-        let mut inventory = Vec::new();
+    pub fn map(&self) -> String {
+        let mut inventory = String::new();
         for (key, value) in &self.list {
-            let mut tmp_str = format!("* {} |", key);
+            let mut tmp_str = format!("\n* {} |", key);
             for planet in value.iter() {
                 tmp_str.push_str(&format!(
                     "\n    --{}，防御舰船：{}",
@@ -58,9 +57,36 @@ impl Galaxy {
                     planet.fleet.len()
                 ));
             }
-            inventory.push(tmp_str);
+            inventory.push_str(&tmp_str);
         }
         inventory
+    }
+
+    //galaxy jump
+    pub fn jump (&mut self){
+        match &self.current[..] {
+            "人马座" => {
+                self.current = "烈阳星区".to_string();
+            }
+            "烈阳星区" => {
+                self.current = "天狼星区".to_string();
+            }
+            "天狼星区" => {
+                self.current = "北落师门".to_string();
+            }
+            "北落师门" => {
+                self.current = "PLA".to_string();
+            }
+            "PLA" => {
+                self.current = "北极星区".to_string();
+            }
+            "北极星区" => {
+                self.current = "人马座".to_string();
+            }
+            _ => {
+                panic!("jump error");
+            }
+        }
     }
 
     // pub fn showPlants() ->
