@@ -1,18 +1,11 @@
 #![allow(unused)]
-mod galaxy;
-mod game;
-mod goods;
-mod planet;
-mod player;
-mod ship;
-mod menu;
-//mod display;
+//#![warn(unused_imports)]
 
-use crate::game::Game;
-
+mod http;
+use crate::http::Http;
 
 fn main() {
-
-     Game::new(600,400).start();
+    Http::new();
 }
+
 
